@@ -1,0 +1,427 @@
+\documentclass[twoside]{article}
+
+% Creates a subtitle command that passes the text to a variable; inspired in [3a]
+\makeatletter
+\newcommand{\subtitle}[1]{%
+	\newcommand{\lesubtitle}{#1}}
+\makeatother
+
+$if(title)$
+\title{$title$}
+$endif$
+
+$if(subtitle)$
+\subtitle{$subtitle$}
+$endif$
+
+\makeatletter % (Re-)defines \and command to add spacing within the authors and the small caps; see [3b]
+	\def\and{%
+		\end{tabular}%
+			\hskip 0pt \@plus.17fil%
+		\begin{tabular}[t]{c@{\vspace{2.5mm}}}} % Adds the spacing to the table through its properties; see [3c]
+\makeatother
+
+% Defines a function that outputs a footnote symbol based on the current count, mimicking original functionality; see [1s]
+\def\@fnsymbol#1{\ensuremath{\ifcase#1\or *\or \dagger\or \ddagger\or
+	\mathsection\or \mathparagraph\or \|\or **\or \dagger\dagger
+		\or \ddagger\ddagger \else\@ctrerr\fi}}
+
+\newcommand{\ssymbol}[1]{^{\@fnsymbol{#1}}}
+
+% Specifies a function that stores each affiliation with an index; see [1t]
+\makeatletter
+\newcommand{\addIndex}[4]{%
+	\protected@edef\@tempa{#1}%
+	\expandafter\g@addto@macro\expandafter#3\expandafter{%
+		\@tempa #4 #2 \\}}
+
+\newcommand{\affiliations}{}
+\newcommand{\addFootnoteIndex}[2]{% Affiliation-specific
+	\addIndex{#1}{#2}{\affiliations}{~}}
+
+\newcommand{\addresses}{}
+\newcommand{\addEndnoteIndex}[2]{% Author/affiliation information
+	\addIndex{#1}{#2}{\addresses}{&}}
+\makeatother
+
+% Sets a function that creates a new footnote-like affiliation using symbols as indexes; inspired in [1u]
+% (can also use \footnotemark per \ssymbol)
+\newcounter{afN} % Affiliation number
+\setcounter{afN}{0}
+\newcommand{\afNSymbol}{$$\ssymbol{\theafN}$$}
+\newcommand{\afFootnote}[1]{%
+	\addtocounter{afN}{1}%
+	\addFootnoteIndex{\afNSymbol}{#1}%
+	\afNSymbol}
+
+\newcommand{\afEndnote}[1]{%
+	\addEndnoteIndex{\afNSymbol}{#1}}
+
+% Adds spacing within multiple authors
+\author{%
+	\begin{tabular}[t]{c@{\vspace{1mm}}}
+		$for(author)$
+		$if(author.name)$
+		$author.name$ %
+		$if(author.affiliation)$
+		\afFootnote{$author.affiliation$, $author.country$}%
+		$if(author.address)$
+		\afEndnote{%
+			Address: $author.address$%
+			$if(author.email)$
+			\\ & Email: $author.email$%
+			$endif$
+		}
+		$else$
+		$if(author.email)$
+		\afEndnote{Email: $author.email$}
+		$endif$
+		$endif$
+		$endif$
+		\and
+		$endif$
+		$endfor$
+	\end{tabular}}
+
+$if(date)$
+\date{$date$}
+$endif$
+
+% Allows to automatically create hyperlinks and cross-references
+\usepackage{hyperref}
+
+\hypersetup{
+	colorlinks=false, % Keeps frames around links and customizes their colors [3d]
+	allbordercolors={1 1 1},
+	linkbordercolor={1 1 1} % "Wipes" frames by a white color [3d]
+}
+
+% Allows to set any font size to text [3e]
+\usepackage{anyfontsize}
+
+% Allows to create containers to adjust the content within them; see [3f] & [3g]
+\usepackage{adjustbox}
+
+% Adds custom margins to the file
+\usepackage{geometry}
+\geometry{
+	a4paper,
+	margin=2cm,
+	bottom=4cm
+}
+
+\setlength{\marginparwidth}{0pt} % No margin for margin notes' area; see [3h]
+
+% Adds external font families:
+% Added as shown in "Usage" on Tug's Font Catalogue; see [a]
+\usepackage[T1]{fontenc}
+
+	% Defaults Linux Libertine; adapted from antpolt.sty [1a]
+	\renewcommand{\rmdefault}{LinuxLibertineT-OsF} % Taken from [1b]
+	\renewcommand{\familydefault}{\rmdefault}
+
+	% Biolinum per [2c-d]; adapted from biolinum.sty, l. 231 [1c]
+	\newcommand{\biolinum}{%
+		\fontfamily{LinuxBiolinumT-OsF} \selectfont} % from id.
+
+	% Antykwa Półtawskiego per [2e-f]
+	\newcommand{\antp}{%
+		\fontfamily{antpl} \selectfont}
+		% P.D. Somehow, the antpolt & libertine/biolinum packages are incompatible with each other
+
+	% Alegreya per [2a-b]
+	\newcommand{\alegreya}{%
+		\fontfamily{Alegreya-OsF} \selectfont} % Adapted from id. see [1l]
+
+	\newcommand{\alegreyaSans}{
+		\fontfamily{AlegreyaSans-OsF} \selectfont} % ibid.
+
+	\newcommand{\ebOn}{\renewcommand\bfdefault{eb}} % Allows to set an extra-bold weight; ad. from [1o]; see [1m-n]
+	\newcommand{\ebOff}{\renewcommand\bfdefault{b}}
+
+% Simplifies a bold small-caps Biolinum font style
+\newcommand{\biolinumsc}{\biolinum \bfseries \scshape}
+
+% Prevents \thetitle to cause issues — in my case, with "Undefined control sequence" in \clearpage
+% by creating a command alike (\letitle); see [3i]
+\makeatletter
+\let\letitle\@title
+\let\leauthor\@author % Passes the value of author as well; see [3j]
+\let\ledate\@date
+\makeatother
+
+% Adds a horizontal line below the header relative to its width and page number
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+
+\setlength{\headheight}{18pt}
+\renewcommand{\headrulewidth}{4pt}
+
+\usepackage{changepage}
+
+\newcommand{\wprhead}[1]{% Calculates the width the header occupies to set the line length; adapted from [1af]; see [1ag]
+	\newlength{\headtextwidth}%
+	\settowidth{\headtextwidth}{#1}%
+
+	% Specifies the line length by redefining \headrule; see [b]
+	\renewcommand\headrule{ % Adapted from [1al]
+		\nointerlineskip
+		\hbox to \headwidth{%
+			\checkoddpage\ifoddpage\else\hss\fi% If even, stick to the right
+			\rule{1.2\headtextwidth}{\headrulewidth}%
+			\checkoddpage\ifoddpage\hss\else\fi}} % If odd, stick to the left
+
+	\fancyhead[LO, RE]{#1}}
+
+\wprhead{\biolinumsc \large Review Article}
+
+\fancyfoot[C]{\Large \thepage}
+
+% Standardizes text into UTF-8 and replaces the U+2014 (dash) character into a Latex macro [1d]
+\usepackage[utf8]{inputenc}
+\DeclareRobustCommand\dash{%
+	\unskip\nobreak\thinspace\textemdash\allowbreak\thinspace\ignorespaces}
+\DeclareUnicodeCharacter{2014}{\dash}
+
+% Allows to add a black diamond as a prefix in (sub)sections; see [1f] & [1g]
+% by importing the symbol rather than the whole package; see [1ab]; adapted from fdsymbol.dtx [1ac]
+
+\DeclareFontFamily{U}{FdSymbolA}{}
+\DeclareFontShape{U}{FdSymbolA}{m}{n}{
+	<-> s * [0.7] FdSymbolA-Book % Decreases size
+}{}
+\DeclareSymbolFont{fdsymbols}{U}{FdSymbolA}{m}{n}
+\DeclareMathSymbol{\bdiamond}{\mathbin}{fdsymbols}{132} % Calculated with getfdSymbolNumber.sh from fdsymbol.dtx
+
+	% Raises the symbol to baseline due to its increase in size of solely importing the symbol; see [1ad]
+\newcommand{\blackdiamond}{\raisebox{2pt}{$$\bdiamond$$}}
+
+% Allows to add manage bibliographies
+\usepackage[style=apa]{biblatex}
+\DeclareLanguageMapping{english}{english-apa}
+\addbibresource{bib.bib}
+
+	% Prepends ISSN, and includes both DOI and URL, even if DOI is defined; see [1am]
+	\renewbibmacro*{doi+url}{%
+		\printfield{issn}%
+		\addperiod\addspace%
+		\printfield{doi}%
+		\addperiod\addspace%
+		\printfield{url}}
+
+	% Substitutes the y/m/d into m/d/y date format predefined on the APA style; see [1ae]
+	\DefineBibliographyExtras{english}{%
+		\protected\def\mkbibdateapalongextra#1#2#3#4{%
+			\iffieldundef{#2}% YEARDIVISION
+			  {}%
+			  {\iffieldundef{#1}%
+				{}%
+				{\addcomma\addspace}%
+			   \iffieldbibstring{#2}{\bibcplstring{\thefield{#2}}}{\thefield{#2}}}%
+			\iffieldundef{#3}% MONTH
+			  {}%
+			  {\mkbibmonth{\thefield{#3}}}%
+			\iffieldundef{#4}% DAY
+			  {}%
+			  {\addspace}%
+			   \stripzeros{\thefield{#4}}%
+			\iffieldundef{#1}% YEAR
+			  {}%
+			  {\iffieldundef{#4}%
+			    {\iffieldundef{#3}%
+				  {}%
+				  {\addcomma\addspace}}% Added comma after month, if day not present
+				{\addcomma\addspace}%
+			   \iffieldbibstring{#1}{\biblcstring{\thefield{#1}}}{\thefield{#1}}\printfield{extradate}}}} % Added from longextra
+
+	% Hyperlinks both the URL and DOI and removes the link; based on biblatex.def
+	\DeclareFieldFormat{url}{%
+		\href{#1}{\mkbibacro{URL}}}
+
+	\DeclareFieldFormat{doi}{%
+		\href{https://doi.org/#1}{\mkbibacro{DOI}}}
+
+	% Removes the URL date
+	\DeclareFieldFormat{urldate}{}
+
+	% Replaces the comma delimiter between the authors; adapted from [1x]
+	\DeclareDelimFormat[bib]{multinamedelim}{~~}
+
+	% Removes the comma before & character [1y]
+	\makeatletter
+	\renewcommand*{\apablx@ifrevnameappcomma}[2]{#2}
+	\makeatother
+
+	\DefineBibliographyExtras{english}{%
+		\let\finalandcomma=\empty}
+
+	% Removes the comma after "et al."; adapted from [1aa]
+	\DefineBibliographyStrings{english}{%
+		andothers = {et\ al\adddot\nopunct}}
+
+	% Italicizes "et al." through xpatch [1z]
+	\usepackage{xpatch}
+
+	\xpatchbibmacro{name:andothers}{%
+		\bibstring{andothers}%
+	}{%
+		\bibstring[\emph]{andothers}%
+	}{}{}
+
+	% Halves the amount of hanging indentation
+	\setlength{\bibhang}{0.25in}
+
+	% Increments the space between entries; see [1v]
+	\setlength\bibitemsep{1.5\itemsep}
+
+	% Sets URLs with the same font as the rest of the text [1i]
+	\usepackage{url}
+	\urlstyle{same}
+
+% Customizes the chapter margins, sizes and font; see [3k] & [1e]
+\usepackage{titlesec}
+
+\makeatletter
+\titleformat{\section}{\antp \huge \bfseries}{$$\blackdiamond$$ \,}{-1pt}{}
+	% Uses double dollar sign to escape embedded math mode in text; see [1j] & [1k]
+\titleformat{\subsection}{\ebOn \antp \Large \bfseries \itshape \ebOff}{$$\blackdiamond$$ ~}{-1pt}{}
+\makeatother
+
+\titlespacing{\section}{0pt}{1mm}{2.5mm}
+
+% Inverts the colors; adapted from [1h]
+% \usepackage{xcolor}
+% \pagecolor[rgb]{0,0,0}
+% \color[rgb]{1,1,1}
+
+\usepackage{tcolorbox}
+
+% Allows to add a fancy, dropping capital at the start of text
+\usepackage{lettrine}
+\usepackage{Zallman}
+
+\renewcommand{\LettrineFontHook}{\Zallmanfamily}
+
+\begin{document}
+\nocite{*}
+	\begin{center}
+		\alegreya
+		% Adjusts the title with its subtitles
+		\fontsize{24}{12} \selectfont \letitle \\
+		\vspace{2.5mm}
+		\fontsize{16.5}{0} \selectfont \lesubtitle \\
+
+		% Adds the authors
+		\fontsize{15}{0} \alegreyaSans
+		\vspace{4mm} \leauthor
+
+		% Adds their affiliations
+		\fontsize{10.5}{12.5} \selectfont
+		\vspace{2mm} \affiliations
+		\fontsize{15}{0} \selectfont
+
+		% Adds a horizontal line between the authors and date
+		$if(date)$
+		\vspace{1mm}
+		\rule{15cm}{.5mm}\\
+		\vspace{4mm} \ledate
+		$endif$
+
+		% Adds the abstract within a black-colored, round text box; see [1p]
+		$if(abstract)$
+		\vspace{4mm} \bfseries Abstract
+		\fontsize{10.5}{12.5} \selectfont
+		\begin{tcolorbox}[colback=red!1!white, coltext=red!1!black]\parindent=1em\parskip=.5em\relax % Adds indentation to the box; ad. from [1q]; see [1r]
+			$abstract$
+		\end{tcolorbox}
+		$endif$
+	\end{center}
+
+\fontsize{11}{13} \selectfont
+\noindent \rule{\linewidth}{2pt} \\
+\vspace{-2.5mm}
+$body$
+
+\printbibliography[title=Bibliography]
+
+\fontsize{10}{12} \selectfont
+\noindent \rule{\linewidth}{2pt} \vspace{-1.5mm} \\
+\biolinum \textbf{Authors' affiliations:} \\
+\begin{tabular}{rl}\addresses\end{tabular}
+\end{document}
+
+% [a]: fontenc T1 option is needed to "correctly" format accents (i.e. provides accented characters directly from the font) [1-3]
+	 % for "support of European languages" [2] (i.e. provides additional characters) [3] and of Latin [4]
+	 % or, rather, is simply better to some extent; though may cause formatting inconsistencies in some fonts [3]
+
+	% [1]: https://texfaq.org/FAQ-why-inp-font % [2]: [3ha]
+	% [3]: https://tex.stackexchange.com/a/345895
+	% [4]: https://www.latex-project.org/help/documentation/encguide.pdf
+		 % https://ctan.org/pkg/latex-base
+
+% [b]: Resets the line definition as no variable of similar kind is defined; see [1ah].
+	 % Yet, as it doesn't stick to the sides readily, based on the \f@nch@Oxxx macros that pin to a side relative to the page number; see [1ai] & [1aj]
+	 % checks if it's odd or even with changepage [1ak] to stick to the left and right respectively with \hss.
+
+% [1a]: https://mirrors.ctan.org/fonts/poltawski/tex/latex/poltawski/antpolt.sty
+% [1b]: https://tex.stackexchange.com/a/25251
+% [1c]: https://mirrors.ctan.org/fonts/libertine/latex/biolinum.sty
+% [1d]: https://tex.stackexchange.com/a/34608
+% [1e]: https://tex.stackexchange.com/a/1477
+% [1f]: https://tug.ctan.org/info/symbols/comprehensive/symbols-a4.pdf
+% [1g]: https://tex.stackexchange.com/a/406875
+% [1h]: https://tex.stackexchange.com/a/40496
+% [1i]: https://tex.stackexchange.com/a/106623
+% [1j]: https://github.com/jgm/pandoc/issues/970#issuecomment-23877197
+% [1k]: https://pandoc.org/MANUAL.html#delimiters
+% [1l]: https://www.ctan.org/texarchive/fonts/alegreya/latex
+% [1m]: http://mirrors.ctan.org/fonts/alegreya/latex/Alegreya.sty
+% [1n]: https://ctan.org/texarchive/macros/latex/contrib/mweights
+% [1o]: https://github.com/latex3/latex2e/issues/306
+% [1p]: https://tex.stackexchange.com/a/46420
+% [1q]: https://tex.stackexchange.com/a/483064
+% [1r]: https://tex.stackexchange.com/a/25905
+% [1s]: https://tex.stackexchange.com/a/146923
+% [1t]: https://tex.stackexchange.com/a/40006
+% [1u]: https://tex.stackexchange.com/a/214425
+% [1v]: https://tex.stackexchange.com/a/19109
+% [1x]: https://tex.stackexchange.com/a/197448
+% [1y]: https://tex.stackexchange.com/a/630531
+% [1z]: https://tex.stackexchange.com/a/40999
+% [1aa]: https://tex.stackexchange.com/a/226458
+% [1ab]: https://tex.stackexchange.com/a/398874
+% [1ac]: https://github.com/ummels/fdsymbol/blob/master/latex/fdsymbol.dtx
+% [1ad]. https://tex.stackexchange.com/a/326522
+% [1ae]: https://tex.stackexchange.com/a/272193
+% [1af]: https://tex.stackexchange.com/a/303902
+% [1ag]: https://tex.stackexchange.com/a/37294
+% [1ah]: https://tex.stackexchange.com/a/69954
+% [1ai]: https://github.com/pietvo/fancyhdr/blob/2fffe4476d0082350a3106cabdfc0c4288010b15/fancyhdr.dtx#L4453
+% [1aj]: http://mirrors.ctan.org/macros/latex/contrib/fancyhdr/fancyhdr.pdf (p. 63)
+%		https://github.com/pietvo/fancyhdr/blob/2fffe4476d0082350a3106cabdfc0c4288010b15/fancyhdr.dtx#L4164
+% [1ak]: https://tex.stackexchange.com/a/6193
+% [1al]: https://tex.stackexchange.com/a/186385
+% [1am]: https://github.com/plk/biblatex-apa/blob/8af0ab1b73776a0976c5d1740b871b3173873ff6/tex/latex/biblatex-apa/bbx/apa.bbx#L2149
+
+% [2a]: https://tug.org/FontCatalogue/alegreya/
+% [2b]: https://ctan.org/pkg/alegreya
+% [2c]: https://tug.org/FontCatalogue/biolinum/
+% [2d]: https://www.ctan.org/pkg/libertine
+% [2e]: https://tug.org/FontCatalogue/antykwapoltawskiego/
+% [2f]: https://www.ctan.org/pkg/poltawski
+
+% [3a]: https://tex.stackexchange.com/a/310057
+% [3b]: https://tex.stackexchange.com/a/109661
+% [3c]: https://en.wikibooks.org/wiki/LaTeX/Tables#Space_between_columns
+% [3d]: https://tex.stackexchange.com/a/50754
+% [3e]: https://texblog.org/2012/08/29/changing-the-font-size-in-latex/
+% [3f]: https://tex.stackexchange.com/a/97506
+% [3g]: https://tex.stackexchange.com/a/121198
+% [3h]: https://latexref.xyz/Marginal-notes.html; see [3ha]
+	% [3ha]: https://latexref.xyz/fontenc-package.html
+		  % or https://texdoc.org/serve/latex2e.pdf/0
+		  % or https://tug.org/texinfohtml/latex2e.html#fontenc-package
+% [3i]: https://tex.stackexchange.com/a/3989
+% [3j]: https://tex.stackexchange.com/a/10131
+% [3k]: https://www.overleaf.com/learn/latex/Sections_and_chapters#Customize_chapters_and_sections
